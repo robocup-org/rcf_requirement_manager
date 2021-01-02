@@ -1,0 +1,16 @@
+{
+    "name": "ali/rcf_requirement_manager",
+    "type": "project",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "Ali",
+            "email": "modaresi.mr@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+	"autoload": {
+        "psr-4": {"Inc\\": "./inc"}
+    }
+}
