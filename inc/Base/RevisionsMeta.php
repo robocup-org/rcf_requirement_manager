@@ -18,11 +18,13 @@
  */
 
 namespace Inc\Base;
+use Inc;
+use Inc\RCF_Module;
 
 /**
  * Class WP_Post_Meta_Revisioning.
  */
-class RevisionsMeta
+class RevisionsMeta extends RCF_Module
 {
 
 	/**
@@ -150,6 +152,9 @@ class RevisionsMeta
 				break;
 			}
 		}
+		if (get_post_meta($last_revision->ID, 'req_status') !== $post->post_status) {
+			$post_has_changed=true;
+		}
 		return $post_has_changed;
 	}
 
@@ -162,13 +167,55 @@ class RevisionsMeta
 	 */
 	public function wp_save_revisioned_meta_fields($revision_id)
 	{
+		rcf_log("revision_id=$revision_id");
 		$revision = get_post($revision_id);
-		$post_id  = $revision->post_parent;
-
+		rcf_log("revision=",$revision);
+		// error_rcf_log(print_r($revision));
+		$parent_id  = $revision->post_parent;
+		rcf_log("parent_id=",$parent_id);
 		// Save revisioned meta fields.
 		foreach ($this->wp_post_revision_meta_keys() as $meta_key) {
-			$this->copy_post_meta($post_id, $revision_id, $meta_key);
+			$this->copy_post_meta($parent_id, $revision_id, $meta_key);
 		}
+
+
+		if (!$parent_id) {
+			return;
+		}
+
+		$parent = get_post($parent_id);
+		rcf_log("parent=",($parent));
+		$revs = wp_get_post_revisions($parent_id, array('order' => "DSC"));
+
+		rcf_log("revs=",($revs));
+
+		update_metadata( 'post', $revision_id, "req_status", $parent->post_status);
+
+		$req_base_id = $parent_id;
+
+		foreach ($revs as $rev_id => $rev) {
+			rcf_log("rev_id=$rev_id rev=",($rev));
+			if ($rev_id==$revision_id){continue;}
+			
+			$req_status = get_post_meta($rev_id, 'req_status', true);
+			rcf_log("req_status=$req_status   parent_status=$parent->post_status");
+			if ($req_status != $parent->post_status) {
+				$req_base_id = $revision_id;
+				rcf_log("req_base_id=$req_base_id");
+				break;
+			}
+			$rev_req_base_id = get_post_meta($rev_id, 'req_base_id', true);
+			rcf_log("rev_req_base_id=$rev_req_base_id");
+			if ($rev_req_base_id) {
+				$req_base_id = $rev_req_base_id;
+				rcf_log("req_base_id=$req_base_id");
+				break;
+			}
+		}
+		rcf_log("parent_id=". $parent_id. " revisionid=".$revision_id." req_base_id=".$req_base_id);
+		// add_post_meta($revision_id, "req_base_id", $req_base_id, true);
+		update_metadata( 'post', $revision_id, "req_base_id", $req_base_id);
+
 	}
 
 	/**

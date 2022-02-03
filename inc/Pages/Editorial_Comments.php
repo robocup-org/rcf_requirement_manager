@@ -380,10 +380,28 @@ class Editorial_Comments
 		if($_POST['rcfaction']=="save" || $_POST['rcfaction']=='save-draft')return;
 
 			$revs=wp_get_post_revisions($ID,array('order'=>"ASC"));
-		    $rev=array_pop($revs);
-		if($rev==null)$rev=$ID; else $rev=$rev->ID;
+			$rev=array_pop($revs);
+			rcf_log('update=',$update);
+			// if($update)$rev=array_pop($revs);//fix the change and submit
 		
-		$comment_content="<a href='".esc_url(get_edit_post_link($rev)) ."' >[".$_POST['rcfaction']."]</a>";
+		// if($rev==null)$rev=$ID; else $rev=$rev->ID;
+		// $comment_content="<a href='".esc_url(get_edit_post_link($rev)) ."' >[".$_POST['rcfaction']."]</a>";
+		
+		
+		if($rev==null){
+			$diff_url=get_edit_post_link($rev->ID ) ;
+			
+		}else{
+			$req_base_id = get_post_meta($rev->ID, 'req_base_id', true);
+			if($req_base_id ==$rev->ID){
+				$diff_url=get_edit_post_link($rev->ID ) ;
+			} else{
+				$diff_url=admin_url( "revision.php?from=".$req_base_id. "&to=".$rev->ID ) ;
+			}
+		}
+		$comment_content="[".$_POST['rcfaction']."] <a href='".esc_url($diff_url) ."' >Diff</a>";
+		
+		// wp-admin/revision.php?from=123&to=124
             if(isset($_POST['rcfcomment']) && $_POST['rcfcomment']!= ''){
                 $comment_content=$comment_content . " ".$_POST['rcfcomment'];
             }

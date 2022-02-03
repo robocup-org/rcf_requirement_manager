@@ -67,12 +67,12 @@ class AddCustomPost
                  */
 
                 $labels = [
-                    "name" => __("Requirements", "twentytwenty"),
-                    "singular_name" => __("Requirement", "twentytwenty"),
+                    "name" => __("Requirements", "rcf_requirement"),
+                    "singular_name" => __("Requirement", "rcf_requirement"),
                 ];
 
                 $args = [
-                    "label" => __("Requirements", "twentytwenty"),
+                    "label" => __("Requirements", "rcf_requirement"),
                     "labels" => $labels,
                     "description" => "",
                     "public" => false,
@@ -110,12 +110,12 @@ class AddCustomPost
                  */
 
                 $labels = [
-                    "name" => __("Leagues", "twentytwenty"),
-                    "singular_name" => __("League", "twentytwenty"),
+                    "name" => __("Leagues", "rcf_requirement"),
+                    "singular_name" => __("League", "rcf_requirement"),
                 ];
 
                 $args = [
-                    "label" => __("Leagues", "twentytwenty"),
+                    "label" => __("Leagues", "rcf_requirement"),
                     "labels" => $labels,
                     "public" => true,
                     "publicly_queryable" => true,
@@ -145,7 +145,7 @@ class AddCustomPost
                  */
 
                 $args = [
-                    "label" => "Key",
+                    "label" => "Event Key",
                     "public" => true,
                     "publicly_queryable" => true,
                     "hierarchical" => false,
@@ -171,88 +171,91 @@ class AddCustomPost
                 $this->add_default_leagues();
             }
             const TDP_TAX_LEAGUE = "league";
- function add_default_leagues(){
-		$numTerms = wp_count_terms(AddCustomPost::TDP_TAX_LEAGUE, array(
-			'hide_empty' => false,
-			'parent'    => 0
-		));
-		if ($numTerms > 0)
-			return;
+            function add_default_leagues()
+            {
+                $numTerms = wp_count_terms(AddCustomPost::TDP_TAX_LEAGUE, array(
+                    'hide_empty' => false,
+                    'parent'    => 0
+                ));
+                if ($numTerms > 0)
+                    return;
 
-		$leagues = array(
-			"Rescue Rapidly Manufactured Robot Challenge",
-			"RoboCup@Home - Domestic Standard Platform",
-			"RoboCup@Home - Open Platform",
-			"RoboCup@Home - Social Standard Platform",
-			"RoboCupIndustrial - RoboCup@Work",
-			"RoboCupIndustrial - RoboCupLogistics",
-			"RoboCupJunior - OnStage",
-			"RoboCupJunior - Rescue",
-			"RoboCupJunior - Rescue - CoSpace",
-			"RoboCupJunior - Soccer",
-			"RoboCupRescue - Robot",
-			"RoboCupRescue - Simulation - Agent",
-			"RoboCupRescue - Simulation - Virtual Robot",
-			"RoboCupSoccer - Humanoid - AdultSize",
-			"RoboCupSoccer - Humanoid - KidSize",
-			"RoboCupSoccer - Humanoid - TeenSize",
-			"RoboCupSoccer - Middle Size",
-			"RoboCupSoccer - Simulation - 2D",
-			"RoboCupSoccer - Simulation - 3D",
-			"RoboCupSoccer - Small Size",
-			"RoboCupSoccer - Standard Platform"
-		);
-		foreach ($leagues as $k => $league) {
-			$splt = explode("-", $league);
+                $leagues = array(
+                    "Rescue Rapidly Manufactured Robot Challenge",
+                    "RoboCup@Home - Domestic Standard Platform",
+                    "RoboCup@Home - Open Platform",
+                    "RoboCup@Home - Social Standard Platform",
+                    "RoboCupIndustrial - RoboCup@Work",
+                    "RoboCupIndustrial - RoboCupLogistics",
+                    "RoboCupJunior - OnStage",
+                    "RoboCupJunior - Rescue",
+                    "RoboCupJunior - Rescue - CoSpace",
+                    "RoboCupJunior - Soccer",
+                    "RoboCupRescue - Robot",
+                    "RoboCupRescue - Simulation - Agent",
+                    "RoboCupRescue - Simulation - Virtual Robot",
+                    "RoboCupSoccer - Humanoid - AdultSize",
+                    "RoboCupSoccer - Humanoid - KidSize",
+                    "RoboCupSoccer - Humanoid - TeenSize",
+                    "RoboCupSoccer - Middle Size",
+                    "RoboCupSoccer - Simulation - 2D",
+                    "RoboCupSoccer - Simulation - 3D",
+                    "RoboCupSoccer - Small Size",
+                    "RoboCupSoccer - Standard Platform"
+                );
+                foreach ($leagues as $k => $league) {
+                    $splt = explode("-", $league);
 
-			$parent_id = 0;
-			$parent_slug = 'rcf-lg-';
-			$parent_name = '';
-			foreach ($splt as $kk => $lg) {
-				$term = trim($lg);
-				$name = $parent_name . $term;
-				$slug = AddCustomPost::slugify($parent_slug . $lg);
-				$tax = get_term_by('slug', $slug, AddCustomPost::TDP_TAX_LEAGUE);
+                    $parent_id = 0;
+                    $parent_slug = 'rcf-lg-';
+                    $parent_name = '';
+                    foreach ($splt as $kk => $lg) {
+                        $term = trim($lg);
+                        $name = $parent_name . $term;
+                        $slug = AddCustomPost::slugify($parent_slug . $lg);
+                        $tax = get_term_by('slug', $slug, AddCustomPost::TDP_TAX_LEAGUE);
 
-				if (empty($tax) || is_wp_error($tax)) {
-					//if(! term_exists( $term,AddCustomPost::TDP_TAX_LEAGUE) ){
-					wp_insert_term($name, AddCustomPost::TDP_TAX_LEAGUE, array('parent' => $parent_id, 'slug' => $slug));
-					$tax = get_term_by('slug', $slug, AddCustomPost::TDP_TAX_LEAGUE);
-				}
-				// update_term_meta($tax->term_id,AddCustomPost::TDP_TAX_LEAGUE_META_SHORT_NAME,$term);
-				$parent_id = $tax->term_id;
+                        if (empty($tax) || is_wp_error($tax)) {
+                            //if(! term_exists( $term,AddCustomPost::TDP_TAX_LEAGUE) ){
+                            wp_insert_term($name, AddCustomPost::TDP_TAX_LEAGUE, array('parent' => $parent_id, 'slug' => $slug));
+                            $tax = get_term_by('slug', $slug, AddCustomPost::TDP_TAX_LEAGUE);
+                        }
+                        // update_term_meta($tax->term_id,AddCustomPost::TDP_TAX_LEAGUE_META_SHORT_NAME,$term);
+                        $parent_id = $tax->term_id;
 
-				$parent_slug = $slug . '-';
-				$parent_name = $name . ' - ';
-			}
-		}
-	}
+                        $parent_slug = $slug . '-';
+                        $parent_name = $name . ' - ';
+                    }
+                }
+            }
 
 
-	static function slugify($text){
-		$text = str_replace('@', '-at-', $text);
-		// replace non letter or digits by -
-		$text = preg_replace('~[^\pL\d]+~u', '-', $text);
+            function slugify($text)
+            {
+                $text = str_replace('@', '-at-', $text);
+                // replace non letter or digits by -
+                $text = sanitize_title_with_dashes($text);
+                //   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
 
-		// transliterate
-		$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+                // transliterate
+                //   $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
 
-		// remove unwanted characters
-		$text = preg_replace('~[^-\w]+~', '', $text);
+                // remove unwanted characters
+                //   $text = preg_replace('~[^-\w]+~', '', $text);
 
-		// trim
-		$text = trim($text, '-');
+                // trim
+                //   $text = trim($text, '-');
 
-		// remove duplicate -
-		$text = preg_replace('~-+~', '-', $text);
+                // remove duplicate -
+                //   $text = preg_replace('~-+~', '-', $text);
 
-		// lowercase
-		$text = strtolower($text);
+                // lowercase
+                //   $text = strtolower($text);
 
-		if (empty($text)) {
-			return 'n-a';
-		}
+                if (empty($text)) {
+                    return 'n-a';
+                }
 
-		return $text;
-	}
+                return $text;
+            }
         }

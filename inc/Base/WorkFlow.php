@@ -17,13 +17,13 @@ class WorkFlow extends RCF_Module
 
     const workflow = [
         'auto-draft' => ['save' => 'ec'],
-        'ec' => ['save-draft' => 'ec', 'submit' => 'loc'],
+        'ec' => ['save-draft' => 'ec', 'submit' => 'trustee'],
         'trustee' => [
-            'accept' => 'final',
+            'accept' => 'loc',
             'reject' => 'ec'
         ],
         'loc' => [
-            'accept' => 'trustee',
+            'accept' => 'final',
             'reject' =>  'ec'
         ],
         'final' => [
@@ -34,7 +34,8 @@ class WorkFlow extends RCF_Module
     public function register()
     {
 
-        // add_action('save_post', array($this, 'debug_save_post_update'), 10, 3);
+        // /add_action('save_post', array($this, 'debug_save_post_update'), 10, 3);
+        add_action('save_post', array($this, 'save_post_update'), 10, 3);
         add_filter('wp_insert_post_data', array($this, 'rcf_change_status'), 10, 2);
 
         add_action('admin_notices', array($this, 'no_js_notice'));
@@ -46,7 +47,22 @@ class WorkFlow extends RCF_Module
         add_action('admin_head-post.php', array($this, 'publish_admin_hook'));
         add_action('admin_head-post-new.php', array($this, 'publish_admin_hook'));
         add_action('wp_ajax_ep_pre_submit_validation', array($this, 'ep_pre_submit_validation'));
+        add_filter('wp_save_post_revision_check_for_changes', array($this, 'wp_save_post_revision_check_for_changes'), 10, 3);
+
     }
+    function wp_save_post_revision_check_for_changes( $return, $last_revision, $post ) {
+		
+		// if acf has changed, return false and prevent WP from performing 'compare' logic
+        
+		rcf_log("last_revision=",$last_revision);
+        rcf_log("meta=",get_post_meta($last_revision->ID, 'req_status'));
+        rcf_log("post=",$post);
+		
+		
+		// return
+		return $return;
+		
+	}
     function isRightPlace()
     {
         global $post;
@@ -96,7 +112,7 @@ class WorkFlow extends RCF_Module
                     </select>
                 </td>
             <tr>
-                <th><label for="my_meta_box_post_type">Key: </label></th>
+                <th><label for="my_meta_box_post_type">Event Key: </label></th>
                 <td>
                     <select name='req_key' id='req_key' style="width:100%">
                         <?php
@@ -185,7 +201,7 @@ class WorkFlow extends RCF_Module
     }
     function hasPermission($post_id, $action, $league = '')
     { //$league_slug
-        list($next,$permission)= $this->getNextState($post_id, $action, $league);
+        list($next, $permission) = $this->getNextState($post_id, $action, $league);
         return $permission;
     }
 
@@ -202,18 +218,18 @@ class WorkFlow extends RCF_Module
             if ($act == $action) {
                 foreach ($roles as $role => $role_name) {
                     if ($role_name == "administrator")
-                        return array($next,true);
-                    if (!$league ){
-                        return array($next,true);
-                    }else if ($post_status == 'auto-draft'&&$action == 'save' &&$this->endsWith($role_name, $league) !== false){
-                        return array($next,true);
+                        return array($next, true);
+                    if (!$league) {
+                        return array($next, true);
+                    } else if ($post_status == 'auto-draft' && $action == 'save' && $this->endsWith($role_name, $league) !== false) {
+                        return array($next, true);
                     } else if ($role_name == $post_status . '-' . $league)
-                        return array($next,true);
+                        return array($next, true);
                 }
             }
         }
 
-        return array($post_status,false);
+        return array($post_status, false);
     }
 
 
@@ -229,8 +245,8 @@ class WorkFlow extends RCF_Module
                         jQuery('#rcfaction').val(this.getAttribute('action'));
                         // jQuery("#post").submit();
                         event.preventDefault();
-                        jQuery("#rcfcomment").val(jQuery("#rcfcomment-"+this.getAttribute('action')).val());
-                        if(jQuery("#post").data("checking"))return false;
+                        jQuery("#rcfcomment").val(jQuery("#rcfcomment-" + this.getAttribute('action')).val());
+                        if (jQuery("#post").data("checking")) return false;
                         jQuery("#post").data("checking", true);
 
                         var form_data = jQuery('#post').serializeArray();
@@ -251,20 +267,20 @@ class WorkFlow extends RCF_Module
                                 jQuery('#ajax-loading').hide();
                                 jQuery('.rcfpublish').removeClass('button-primary-disabled');
                             }
-                            
+
                             // jQuery('#save-post').removeClass('button-disabled');
                         }).fail(function(err) {
-                            alert( "connection error",JSON.stringify(err) );
+                            alert("connection error", JSON.stringify(err));
                             jQuery("#post").data("checking", false);;
                             jQuery("#post").data("valid", false);
-                                //hide loading icon, return Publish button to normal
-                                jQuery('#ajax-loading').hide();
-                                jQuery('.rcfpublish').removeClass('button-primary-disabled');
+                            //hide loading icon, return Publish button to normal
+                            jQuery('#ajax-loading').hide();
+                            jQuery('.rcfpublish').removeClass('button-primary-disabled');
                         });
                     });
-                    
+
                     jQuery(document).on('submit', 'form#post', function() {
-                        if (jQuery("#post").data("valid")) 
+                        if (jQuery("#post").data("valid"))
                             return true;
                         return false;
                     });
@@ -310,7 +326,7 @@ class WorkFlow extends RCF_Module
             if ($this->getState($post->ID) == 'auto-draft')
                 add_meta_box(
                     'key_box',                 // Unique ID
-                    'Key',      // Box title
+                    'Requirement Information',      // Box title
                     array($this, 'generateLeagueKey'),  // Content callback, must be of type callable
                     $screen,                            // Post type,
                     "normal",
@@ -368,26 +384,25 @@ class WorkFlow extends RCF_Module
                 $style = $act == "reject" ? "background-color:darkred" : "";
                 $class = $act == "save-draft" ? "button-secondary" : "button-primary";
                 $action = ucfirst($act);
-                if($act!="save-draft"&&$act!="save"){
-                    ?>
-                    <div id="my-content-<?php echo $action;?>" style="display:none;">
-                         <p>
-                              Are you sure to submit the form? You will not be able to edit it any more.
-                              
-                         </p>
-                         <div>
-                             <p>
-                         Please add some comments.
-                </p>
-                         <textarea id="rcfcomment-<?php echo $act?>" placeholder="comment" cols="50" rows="5"></textarea>
-                </div>
-                        <?php echo "<a href='#'  class='button $class button-large rcfpublish' action='$act' style='$style'> $action</a>";?>
+                if ($act != "save-draft" && $act != "save") {
+        ?>
+                    <div id="my-content-<?php echo $action; ?>" style="display:none;">
+                        <p>
+                            Are you sure to submit the form? You will not be able to edit it any more.
+
+                        </p>
+                        <div>
+                            <p>
+                                Please add some comments.
+                            </p>
+                            <textarea id="rcfcomment-<?php echo $act ?>" placeholder="comment" cols="50" rows="5"></textarea>
+                        </div>
+                        <?php echo "<a href='#'  class='button $class button-large rcfpublish' action='$act' style='$style'> $action</a>"; ?>
                         <a href='#' class="button button-large" onclick="tb_remove();"> Cancel </a>
                     </div>
-                    <?php
-                    echo "<a href='#TB_inline?&inlineId=my-content-$action' action='$act' class='thickbox button $class button-large' style='$style'>$action</a>"	;
-                    
-                }else
+            <?php
+                    echo "<a href='#TB_inline?&inlineId=my-content-$action' action='$act' class='thickbox button $class button-large' style='$style'>$action to $next</a>";
+                } else
                     echo "<input type='button' name='publish1' class='button $class button-large rcfpublish' style='$style' action='$act' value='$action'/>";
             }
         }
@@ -399,7 +414,7 @@ class WorkFlow extends RCF_Module
     function no_js_notice()
     {
         if ($this->is_whitelisted_page()) :
-        ?>
+            ?>
             <style type="text/css">
                 /* Hide post status dropdown by default in case of JS issues **/
                 #submitdiv {
@@ -416,6 +431,7 @@ class WorkFlow extends RCF_Module
     function rcf_change_status($data, $postarr)
     {
         if (isset($postarr['rcfaction'])) {
+            $post_id=$postarr['ID'];
             $league_term = wp_get_post_terms($postarr['ID'], 'league');
 
             if (!$league_term) {
@@ -428,14 +444,62 @@ class WorkFlow extends RCF_Module
                 wp_die($res);
                 return;
             }
-            list($nextstatus,$permission)=$this->getNextState($postarr['ID'], $postarr['rcfaction'], $league_term[0]->slug);
-            $data['post_status'] = $nextstatus;
+            list($nextstatus, $permission) = $this->getNextState($post_id, $postarr['rcfaction'], $league_term[0]->slug);
             
+            $data['post_status'] = $nextstatus;
+            // if ($nextstatus !=$this->getState($ID)){
+                // wp_save_post_revision($ID);
+            //     $revs=wp_get_post_revisions($ID,array('order'=>"ASC"));
+		    //     $rev=array_pop($revs);
+            //     add_post_meta( $post_id, "base_req_id", $base_id, true );
+            // }
+            
+        
             return $data;
         }
         return $data;
     }
-
+    function save_post_update($ID, $post, $update){
+        // wp_save_post_revision( $ID );
+        return;
+        $parent_id=wp_is_post_revision($ID);
+        rcf_log("parent_id=". $parent_id. "id=".$ID);
+        if (!$parent_id){return;}
+        
+        $parent=get_post($parent_id);
+        $revs=wp_get_post_revisions($parent_id,array('order'=>"DSC"));
+        add_post_meta( $ID, "req_status", $parent->post_status, true );
+        
+        $req_base_id=$ID;
+        
+            foreach($revs as $rev_id=>$rev){
+                $req_status=get_post_meta($rev_id,'req_status',true);
+                if ($req_status!=$parent->post_status){
+                    $req_base_id=$post->ID;
+                    break;
+                }
+                $rev_req_base_id=get_post_meta($rev_id,'req_base_id',true);
+                if ($rev_req_base_id){
+                    $req_base_id=$rev_req_base_id;
+                    break;
+                }
+            }
+        
+        add_post_meta( $post->ID, "req_base_id", $req_base_id, true );
+        
+		// $rev=array_pop($revs);
+        // if ($nextstatus !=$this->getState($ID)){
+        //     $data['post_status'];
+        // }
+        // var_dump($ID);
+        // echo "====";
+        // var_dump($post);
+        // echo "====";
+        // var_dump($update);
+        // echo "====";
+        // var_dump($rev);
+        // wp_die("");
+    }
     // function debug_save_post_update($ID, $post, $update)
     // {
     //     if ($post->post_type !== 'requirement') return;

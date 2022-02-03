@@ -46,8 +46,20 @@ class AddUserRoles extends RCF_Module
                 );
             }    
         }
+        $role = get_role( 'administrator' );
+ 
+        // Add a new capability.
+        $role->add_cap( 'edit_requirements', true );
+        $role->add_cap( 'edit_others_requirements', true );
+        $role->add_cap( 'read_private_requirements', true );
+        $role->add_cap( 'delete_requirements', true );
+        $role->add_cap( 'delete_private_requirements', true );
+        $role->add_cap( 'delete_published_requirements', true );
+        $role->add_cap( 'delete_others_requirements', true );
+        $role->add_cap( 'edit_private_requirements', true );
+        $role->add_cap( 'edit_published_requirements', true );
         
-        //add the new user role
+
         
      
     }

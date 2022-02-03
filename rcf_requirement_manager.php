@@ -26,8 +26,8 @@
  */
 
 // If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
-	die;
+if (!defined('WPINC')) {
+    die;
 }
 
 /**
@@ -35,27 +35,29 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'RCF_REQUIREMENT_MANAGER_VERSION', '1.0.0' );
+define('RCF_REQUIREMENT_MANAGER_VERSION', '1.0.0');
 
 
-defined( 'ABSPATH' ) or die( 'Hey, what are you doing here? You silly human!' );
+defined('ABSPATH') or die('Hey, what are you doing here? You silly human!');
 
-if ( file_exists( dirname( __FILE__ ) . '/vendor/autoload.php' ) ) {
-	require_once dirname( __FILE__ ) . '/vendor/autoload.php';
+if (file_exists(dirname(__FILE__) . '/vendor/autoload.php')) {
+    require_once dirname(__FILE__) . '/vendor/autoload.php';
+}
+require_once dirname(__FILE__) . '/inc/Utils.php';
+
+define('PLUGIN_PATH', plugin_dir_path(__FILE__));
+define('PLUGIN_URL', plugin_dir_url(__FILE__));
+
+if (class_exists('Inc\\Init')) {
+    Inc\Init::register_services();
 }
 
-define( 'PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
-define( 'PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-
-if ( class_exists( 'Inc\\Init' ) ) {
-	Inc\Init::register_services();
-}
-
-function default_comments_on( $data ) {
-    if( $data['post_type'] == 'requirement' ) {
+function default_comments_on($data)
+{
+    if ($data['post_type'] == 'requirement') {
         $data['comment_status'] = 1;
     }
 
     return $data;
 }
-add_filter( 'wp_insert_post_data', 'default_comments_on' );
+add_filter('wp_insert_post_data', 'default_comments_on');

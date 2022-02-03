@@ -408,7 +408,7 @@ Does the league contain real robots? Recommended average additional free space f
 					),
 					array(
 						'key' => 'field_5f9fee22e06de',
-						'label' => 'Comments',
+						'label' => 'Others',
 						'name' => '',
 						'type' => 'accordion',
 						'instructions' => '',
