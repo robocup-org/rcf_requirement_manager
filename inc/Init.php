@@ -27,6 +27,8 @@ final class Init
 			Base\AddCustomPost::class,
 			Base\RevisionsMeta::class,
 			Base\Activate::class,
+			Base\FrontEnd::class,
+			
 		
 		];
 	}

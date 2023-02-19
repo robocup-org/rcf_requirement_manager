@@ -1,4 +1,5 @@
 <?php
+
 namespace Inc\Pages;
 // namespace \;
 /**
@@ -19,14 +20,14 @@ class Editorial_Comments
 	 */
 	function register()
 	{
-        add_action('save_post', array($this, 'commentfromsubmit'), 10, 3);
+		add_action('save_post', array($this, 'commentfromsubmit'), 10, 3);
 
-		add_action('add_meta_boxes', array($this, 'add_post_meta_box'),11);
+		add_action('add_meta_boxes', array($this, 'add_post_meta_box'), 11);
 		add_action('admin_enqueue_scripts', array($this, 'add_admin_scripts'));
 		add_action('wp_ajax_editflow_ajax_insert_comment', array($this, 'ajax_insert_comment'));
 	}
-
-
+	
+		
 	/**
 	 * Checks for the current post type
 	 *
@@ -76,7 +77,7 @@ class Editorial_Comments
 		if (!in_array($pagenow, array('post.php', 'page.php', 'post-new.php', 'page-new.php')))
 			return;
 
-			
+
 		wp_enqueue_script('edit_flow-post_comment', PLUGIN_URL . 'assets/editorial-comments.js', array('jquery', 'wp-ajax-response'), 1, true);
 		wp_localize_script('edit_flow-post_comment', '__ef_localize_post_comment', array(
 			'and'           => esc_html__('and', 'edit-flow'),
@@ -102,11 +103,11 @@ class Editorial_Comments
 	function add_post_meta_box()
 	{
 		global $post;
-		if ($post==null||in_array($post->post_status, array('new', 'auto-draft'))) 
+		if ($post == null || in_array($post->post_status, array('new', 'auto-draft')))
 			return;
 		$supported_post_types = ['requirement'];
 		foreach ($supported_post_types as $post_type)
-			add_meta_box('editorial-comments', 'Comments', array($this, 'editorial_comments_meta_box'), $post_type,"side", "high");
+			add_meta_box('editorial-comments', 'Comments', array($this, 'editorial_comments_meta_box'), $post_type, "side", "default");
 	}
 
 	function editorial_comments_meta_box()
@@ -131,10 +132,10 @@ class Editorial_Comments
 						'status' => 1
 					)
 				);
-				
+
 			?>
-				
-				
+
+
 				<div class="clear"></div>
 				<ul id="ef-comments">
 					<?php
@@ -150,7 +151,7 @@ class Editorial_Comments
 					?>
 				</ul>
 
-			
+
 
 			<?php
 			else :
@@ -159,7 +160,7 @@ class Editorial_Comments
 			<?php
 			endif;
 			?>
-			
+
 		</div>
 		<div class="clear"></div>
 	<?php
@@ -181,7 +182,7 @@ class Editorial_Comments
 				<textarea id="ef-replycontent" name="replycontent" cols="40" rows="5"></textarea>
 			</div>
 
-			
+
 			<p id="ef-replysubmit">
 				<a class="ef-replysave button-primary alignright" href="#comments-form">
 					<span id="ef-replybtn"><?php _e('Submit Comment', 'edit-flow') ?></span>
@@ -228,7 +229,7 @@ class Editorial_Comments
 	 */
 	function the_comment($comment, $args, $depth)
 	{
-	
+
 		global $current_user, $userdata;
 
 		// Get current user
@@ -264,24 +265,24 @@ class Editorial_Comments
 
 			<div class="post-comment-wrap">
 				<h5 class="comment-meta">
-					
+
 					<?php printf(
-						__('<span class="comment-author">%1$s</span><span class="meta"> said on %2$s at %3$s</span>', 'edit-flow'),
+						__('<span class="comment-author">%1$s</span><span class="meta" style=""><span class="badge">%2$s</span> <span class="badge">%3$s</span></span>', 'edit-flow'),
 						comment_author_email_link($comment->comment_author),
-						get_comment_date(get_option('date_format')),
+						get_comment_date("d/M/y"),
 						get_comment_time()
 					); ?>
 					<span class="row-actions" style="float:right"><?php echo $actions_string; ?></span>
 				</h5>
-				
+
 
 			</div>
-			
-				<div class="comment-content"><?php comment_text(); ?></div>
-				<?php $this->maybe_output_comment_meta($comment->comment_ID); ?>
-				
+
+			<div class="comment-content"><?php comment_text(); ?></div>
+			<?php $this->maybe_output_comment_meta($comment->comment_ID); ?>
+
 		</li>
-	<?php
+<?php
 	}
 
 	/**
@@ -311,12 +312,14 @@ class Editorial_Comments
 		$comment_content = trim($_POST['content']);
 		if (!$comment_content)
 			die(__("Please enter a comment.", 'edit-flow'));
-
+		
 		// Check that we have a post_id and user logged in
 		if ($post_id && $current_user) {
-
+			$post=get_post($post_id);
 			// set current time
 			$time = current_time('mysql', $gmt = 0);
+			$comment_content = "<span class='badge badge-info'>". $post->post_status ."</span> ". 
+					wp_kses($comment_content, array('a' => array('href' => array(), 'title' => array()),'span'=>array(), 'b' => array(), 'i' => array(), 'strong' => array(), 'em' => array(), 'u' => array(), 'del' => array(), 'blockquote' => array(), 'sub' => array(), 'sup' => array()));
 
 			// Set comment data
 			$data = array(
@@ -324,7 +327,7 @@ class Editorial_Comments
 				'comment_author' => esc_sql($current_user->display_name),
 				'comment_author_email' => esc_sql($current_user->user_email),
 				'comment_author_url' => esc_sql($current_user->user_url),
-				'comment_content' => wp_kses($comment_content, array('a' => array('href' => array(), 'title' => array()), 'b' => array(), 'i' => array(), 'strong' => array(), 'em' => array(), 'u' => array(), 'del' => array(), 'blockquote' => array(), 'sub' => array(), 'sup' => array())),
+				'comment_content' => $comment_content,
 				'comment_type' => '',
 				'comment_parent' => (int) $parent,
 				'user_id' => (int) $user_ID,
@@ -340,7 +343,7 @@ class Editorial_Comments
 
 			// Insert Comment
 			$comment_id = wp_insert_comment($data);
-			
+
 			// global $wpdb;
 			// error_log(var_dump($wpdb->queries));
 
@@ -373,64 +376,82 @@ class Editorial_Comments
 	}
 
 
-	function commentfromsubmit($ID, $post, $update){
+	function commentfromsubmit($ID, $post, $update)
+	{
 
-		if(!isset($_POST['rcfcomment']))return;
-		if(!isset($_POST['rcfaction']))return;
-		if($_POST['rcfaction']=="save" || $_POST['rcfaction']=='save-draft')return;
+		if (!isset($_POST['rcfcomment'])) return;
+		if (!isset($_POST['rcfaction'])) return;
+		if ($_POST['rcfaction'] == "save" || $_POST['rcfaction'] == 'save-draft') return;
+		if ($post->post_parent)return;
+		$role=$_POST['old_post_status'];
 
-			$revs=wp_get_post_revisions($ID,array('order'=>"ASC"));
-			$rev=array_pop($revs);
-			rcf_log('update=',$update);
-			// if($update)$rev=array_pop($revs);//fix the change and submit
+		$revs = wp_get_post_revisions($ID, array('order' => "ASC"));
 		
+		$first_rev = array_shift($revs);
+		$rev = array_pop($revs);
+		
+		$checkrev=$rev;
+		if($update)$checkrev=array_pop($revs);//fix the change and submit
+
 		// if($rev==null)$rev=$ID; else $rev=$rev->ID;
 		// $comment_content="<a href='".esc_url(get_edit_post_link($rev)) ."' >[".$_POST['rcfaction']."]</a>";
-		
-		
-		if($rev==null){
-			$diff_url=get_edit_post_link($rev->ID ) ;
-			
-		}else{
-			$req_base_id = get_post_meta($rev->ID, 'req_base_id', true);
-			if($req_base_id ==$rev->ID){
-				$diff_url=get_edit_post_link($rev->ID ) ;
-			} else{
-				$diff_url=admin_url( "revision.php?from=".$req_base_id. "&to=".$rev->ID ) ;
-			}
+
+
+		if ($checkrev == null) {
+			$diff_url = get_edit_post_link($ID);
+		} else {
+			$req_base_id = get_post_meta($checkrev->ID, 'req_base_id', true);
+			if ($req_base_id==$post->post_parent)
+				$req_base_id=$first_rev->ID;
+			if ($req_base_id=='')$req_base_id=$checkrev->ID;
+
+			if ($req_base_id == $rev->ID) {
+				$diff_url = get_edit_post_link($rev->ID);
+			} else {
+				$diff_url = admin_url("revision.php?from=" . $req_base_id . "&to=" . $rev->ID);
+			 }
 		}
-		$comment_content="[".$_POST['rcfaction']."] <a href='".esc_url($diff_url) ."' >Diff</a>";
+		$rcfaction=$_POST['rcfaction'];
+		$diff_url=esc_url($diff_url);
+		
+        $class = "badge badge-" . ($rcfaction == "reject" ? "danger" : "success");
+		$comment_content = "<span class='badge badge-info'>". $role ."</span> ".
+							"<span class='$class'>$rcfaction</span> ".
+							"<a class='badge badge-primary' target='_blank' href='/?p=".$rev->ID."' >Version</a> ".
+							"<a class='badge badge-secondary' href='$diff_url' >Diff</a> "
+
+							;
 		
 		// wp-admin/revision.php?from=123&to=124
-            if(isset($_POST['rcfcomment']) && $_POST['rcfcomment']!= ''){
-                $comment_content=$comment_content . " ".$_POST['rcfcomment'];
-            }
-            global $current_user, $user_ID;
-            wp_get_current_user();
-                        // Set comment data
-            $time = current_time('mysql', $gmt = 0);
+		if (isset($_POST['rcfcomment']) && $_POST['rcfcomment'] != '') {
+			$comment_content = $comment_content . "<br>" . 
+				wp_kses($_POST['rcfcomment'], array('a' => array('href' => array(), 'title' => array()),'span'=>array(), 'b' => array(), 'i' => array(), 'strong' => array(), 'em' => array(), 'u' => array(), 'del' => array(), 'blockquote' => array(), 'sub' => array(), 'sup' => array()));
+		}
+		global $current_user, $user_ID;
+		wp_get_current_user();
+		// Set comment data
+		$time = current_time('mysql', $gmt = 0);
 
-			$com = array(
-				'comment_post_ID' => (int) $ID,
-				'comment_author' => esc_sql($current_user->display_name),
-				'comment_author_email' => esc_sql($current_user->user_email),
-				'comment_author_url' => esc_sql($current_user->user_url),
-				'comment_content' => wp_kses($comment_content, array('a' => array('href' => array(), 'title' => array()), 'b' => array(), 'i' => array(), 'strong' => array(), 'em' => array(), 'u' => array(), 'del' => array(), 'blockquote' => array(), 'sub' => array(), 'sup' => array())),
-				'comment_type' => '',
-				// 'comment_parent' => 0,
-				'user_id' => (int) $user_ID,
-				'comment_author_IP' => esc_sql($_SERVER['REMOTE_ADDR']),
-				'comment_agent' => esc_sql($_SERVER['HTTP_USER_AGENT']),
-				'comment_date' => $time,
-				'comment_date_gmt' => $time,
-				// Set to -1?
-				'comment_approved' => 1,
-			);
+		$com = array(
+			'comment_post_ID' => (int) $ID,
+			'comment_author' => esc_sql($current_user->display_name),
+			'comment_author_email' => esc_sql($current_user->user_email),
+			'comment_author_url' => esc_sql($current_user->user_url),
+			'comment_content' => $comment_content,
+			'comment_type' => '',
+			// 'comment_parent' => 0,
+			'user_id' => (int) $user_ID,
+			'comment_author_IP' => esc_sql($_SERVER['REMOTE_ADDR']),
+			'comment_agent' => esc_sql($_SERVER['HTTP_USER_AGENT']),
+			'comment_date' => $time,
+			'comment_date_gmt' => $time,
+			// Set to -1?
+			'comment_approved' => 1,
+		);
 
-			$com = apply_filters('ef_pre_insert_editorial_comment', $com);
+		$com = apply_filters('ef_pre_insert_editorial_comment', $com);
 
-			// Insert Comment
-			$comment_id = wp_insert_comment($com);
-		
+		// Insert Comment
+		$comment_id = wp_insert_comment($com);
 	}
 }

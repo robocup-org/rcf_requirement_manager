@@ -16,7 +16,7 @@ class WorkFlow extends RCF_Module
     const steps = ['ec' => 'EC', 'trustee' => 'Trustee', 'loc' => 'LOC', 'final' => 'Final'];
 
     const workflow = [
-        'auto-draft' => ['save' => 'ec'],
+        'auto-draft' => ['save-draft' => 'ec'],
         'ec' => ['save-draft' => 'ec', 'submit' => 'trustee'],
         'trustee' => [
             'accept' => 'loc',
@@ -48,21 +48,40 @@ class WorkFlow extends RCF_Module
         add_action('admin_head-post-new.php', array($this, 'publish_admin_hook'));
         add_action('wp_ajax_ep_pre_submit_validation', array($this, 'ep_pre_submit_validation'));
         add_filter('wp_save_post_revision_check_for_changes', array($this, 'wp_save_post_revision_check_for_changes'), 10, 3);
-
-    }
-    function wp_save_post_revision_check_for_changes( $return, $last_revision, $post ) {
-		
-		// if acf has changed, return false and prevent WP from performing 'compare' logic
         
-		rcf_log("last_revision=",$last_revision);
-        rcf_log("meta=",get_post_meta($last_revision->ID, 'req_status'));
-        rcf_log("post=",$post);
-		
-		
-		// return
-		return $return;
-		
-	}
+        
+        add_action('add_meta_boxes', array($this,'remove_my_custom_metabox'));
+        add_action('edit_form_after_title',array($this,'add_requirement_text' ));
+    }
+ 
+function add_requirement_text($post) {
+  
+  if ($post->post_type == 'requirement') {
+    echo '<h3>';
+    echo $post->post_title;
+    echo '</h3>';
+  }
+}
+    function remove_my_custom_metabox() {
+        remove_meta_box('acf-Req_group', 'requirement', 'normal');
+        remove_meta_box('commentstatusdiv', 'requirement', 'normal');
+        remove_meta_box('slugdiv', 'requirement', 'normal');
+        remove_meta_box('acf-Req_group', 'requirement', 'normal');
+    }
+    
+    function wp_save_post_revision_check_for_changes($return, $last_revision, $post)
+    {
+
+        // if acf has changed, return false and prevent WP from performing 'compare' logic
+
+        rcf_log("last_revision=", $last_revision);
+        rcf_log("meta=", get_post_meta($last_revision->ID, 'req_status'));
+        rcf_log("post=", $post);
+
+
+        // return
+        return $return;
+    }
     function isRightPlace()
     {
         global $post;
@@ -104,7 +123,7 @@ class WorkFlow extends RCF_Module
                         <?php $roles = wp_get_current_user()->roles;
                         $leagues = get_terms('league', ['hide_empty' => false,]);
                         foreach ($leagues as $league) {
-                            if ($this->hasPermission($post_id, 'save', $league->slug)) {
+                            if ($this->hasPermission($post_id, 'save-draft', $league->slug)) {
                                 echo "<option value='$league->slug'>$league->name</option>";
                             }
                         }
@@ -125,6 +144,10 @@ class WorkFlow extends RCF_Module
                         ?>
                     </select>
                 </td>
+            </tr>
+            <tr>
+                    <td><button type="button" name="publish1" class="button button-secondary button-large rcfpublish" style="" action="save-draft" value="Save-draft">Next</button></td>
+
             </tr>
         </table>
         <?php
@@ -216,14 +239,20 @@ class WorkFlow extends RCF_Module
 
         foreach ($this::workflow[$post_status] as $act => $next) {
             if ($act == $action) {
+                
                 foreach ($roles as $role => $role_name) {
                     if ($role_name == "administrator")
                         return array($next, true);
+                    
                     if (!$league) {
                         return array($next, true);
-                    } else if ($post_status == 'auto-draft' && $action == 'save' && $this->endsWith($role_name, $league) !== false) {
+                    } else if (($post_status == 'auto-draft' || $post_status == 'ec')
+                                && $action == 'save-draft' 
+                                && $this->endsWith($role_name, $league)) {
                         return array($next, true);
-                    } else if ($role_name == $post_status . '-' . $league)
+                    }else if (strtolower($role_name) == "trustee" && $role_name == $post_status){
+                        return array($next, true);
+                    } else if ($role_name == $post_status . '-' . $league )
                         return array($next, true);
                 }
             }
@@ -324,6 +353,7 @@ class WorkFlow extends RCF_Module
             );
             global $post;
             if ($this->getState($post->ID) == 'auto-draft')
+                
                 add_meta_box(
                     'key_box',                 // Unique ID
                     'Requirement Information',      // Box title
@@ -349,6 +379,9 @@ class WorkFlow extends RCF_Module
         }
         ?>
         <label>Current Status: <?php echo $post->post_status ?></label>
+        
+        <a href='/?p=<?php echo $post->ID?>' target='_blank' class='button secondary button-large' style='float:right' ><?php echo $post->post_status=="final"?"Print": "Preview"?></a>
+        
         <div class="clear"></div>
         <?php
         if (!empty($args['revisions_count'])) :
@@ -373,7 +406,7 @@ class WorkFlow extends RCF_Module
         $save = true;
         $post_status = $this->getState($post->ID);
         echo '<input type="hidden" name="rcfaction" id="rcfaction" value="">';
-        echo '<input type="hidden" name="rcfcomment" id="rcfcomment" value="">';
+        echo '<input type="hidden" name="rcfcomment" id="rcfcomment" value=""><input type="hidden" name="old_post_status" value="'. $post->post_status .'">';
 
         foreach ($this::workflow[$post_status] as $act => $next) {
             if ($this->hasPermission($post->ID, $act)) {
@@ -395,7 +428,7 @@ class WorkFlow extends RCF_Module
                             <p>
                                 Please add some comments.
                             </p>
-                            <textarea id="rcfcomment-<?php echo $act ?>" placeholder="comment" cols="50" rows="5"></textarea>
+                            <textarea id="rcfcomment-<?php echo $act ?>" placeholder="comment" cols="80" rows="5"></textarea>
                         </div>
                         <?php echo "<a href='#'  class='button $class button-large rcfpublish' action='$act' style='$style'> $action</a>"; ?>
                         <a href='#' class="button button-large" onclick="tb_remove();"> Cancel </a>
@@ -431,7 +464,7 @@ class WorkFlow extends RCF_Module
     function rcf_change_status($data, $postarr)
     {
         if (isset($postarr['rcfaction'])) {
-            $post_id=$postarr['ID'];
+            $post_id = $postarr['ID'];
             $league_term = wp_get_post_terms($postarr['ID'], 'league');
 
             if (!$league_term) {
@@ -445,49 +478,52 @@ class WorkFlow extends RCF_Module
                 return;
             }
             list($nextstatus, $permission) = $this->getNextState($post_id, $postarr['rcfaction'], $league_term[0]->slug);
-            
+
             $data['post_status'] = $nextstatus;
             // if ($nextstatus !=$this->getState($ID)){
-                // wp_save_post_revision($ID);
+            // wp_save_post_revision($ID);
             //     $revs=wp_get_post_revisions($ID,array('order'=>"ASC"));
-		    //     $rev=array_pop($revs);
+            //     $rev=array_pop($revs);
             //     add_post_meta( $post_id, "base_req_id", $base_id, true );
             // }
-            
-        
+
+
             return $data;
         }
         return $data;
     }
-    function save_post_update($ID, $post, $update){
+    function save_post_update($ID, $post, $update)
+    {
         // wp_save_post_revision( $ID );
         return;
-        $parent_id=wp_is_post_revision($ID);
-        rcf_log("parent_id=". $parent_id. "id=".$ID);
-        if (!$parent_id){return;}
-        
-        $parent=get_post($parent_id);
-        $revs=wp_get_post_revisions($parent_id,array('order'=>"DSC"));
-        add_post_meta( $ID, "req_status", $parent->post_status, true );
-        
-        $req_base_id=$ID;
-        
-            foreach($revs as $rev_id=>$rev){
-                $req_status=get_post_meta($rev_id,'req_status',true);
-                if ($req_status!=$parent->post_status){
-                    $req_base_id=$post->ID;
-                    break;
-                }
-                $rev_req_base_id=get_post_meta($rev_id,'req_base_id',true);
-                if ($rev_req_base_id){
-                    $req_base_id=$rev_req_base_id;
-                    break;
-                }
+        $parent_id = wp_is_post_revision($ID);
+        rcf_log("parent_id=" . $parent_id . "id=" . $ID);
+        if (!$parent_id) {
+            return;
+        }
+
+        $parent = get_post($parent_id);
+        $revs = wp_get_post_revisions($parent_id, array('order' => "DSC"));
+        add_post_meta($ID, "req_status", $parent->post_status, true);
+
+        $req_base_id = $ID;
+
+        foreach ($revs as $rev_id => $rev) {
+            $req_status = get_post_meta($rev_id, 'req_status', true);
+            if ($req_status != $parent->post_status) {
+                $req_base_id = $post->ID;
+                break;
             }
-        
-        add_post_meta( $post->ID, "req_base_id", $req_base_id, true );
-        
-		// $rev=array_pop($revs);
+            $rev_req_base_id = get_post_meta($rev_id, 'req_base_id', true);
+            if ($rev_req_base_id) {
+                $req_base_id = $rev_req_base_id;
+                break;
+            }
+        }
+
+        add_post_meta($post->ID, "req_base_id", $req_base_id, true);
+
+        // $rev=array_pop($revs);
         // if ($nextstatus !=$this->getState($ID)){
         //     $data['post_status'];
         // }

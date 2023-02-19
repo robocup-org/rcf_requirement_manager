@@ -69,6 +69,9 @@ class AddCustomPost
                 $labels = [
                     "name" => __("Requirements", "rcf_requirement"),
                     "singular_name" => __("Requirement", "rcf_requirement"),
+                    'edit_item' => __("Edit Requirement", "rcf_requirement"),
+                    'new_item' => __("New Requirement", "rcf_requirement"),
+                    'add_new_item'=> __("Add New Requirement", "rcf_requirement"),
                 ];
 
                 $args = [
@@ -81,7 +84,7 @@ class AddCustomPost
                     "show_in_rest" => true,
                     "rest_base" => "",
                     "rest_controller_class" => "WP_REST_Posts_Controller",
-                    "has_archive" => false,
+                    "has_archive" => true,
                     "show_in_menu" => true,
                     "show_in_nav_menus" => true,
                     "delete_with_user" => false,
@@ -113,7 +116,7 @@ class AddCustomPost
                     "name" => __("Leagues", "rcf_requirement"),
                     "singular_name" => __("League", "rcf_requirement"),
                 ];
-
+;
                 $args = [
                     "label" => __("Leagues", "rcf_requirement"),
                     "labels" => $labels,
@@ -181,7 +184,7 @@ class AddCustomPost
                     return;
 
                 $leagues = array(
-                    "Rescue Rapidly Manufactured Robot Challenge",
+                    // "Rescue Rapidly Manufactured Robot Challenge",
                     "RoboCup@Home - Domestic Standard Platform",
                     "RoboCup@Home - Open Platform",
                     "RoboCup@Home - Social Standard Platform",

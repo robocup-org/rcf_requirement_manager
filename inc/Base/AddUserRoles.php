@@ -27,11 +27,28 @@ class AddUserRoles extends RCF_Module
             'hide_empty' => false,
         ));
         foreach ($terms as $term){
+            $termsplt=explode(' - ',str_replace("RoboCup","",$term->name));
+            
+            $role="domain_".str_replace(' ','-',$termsplt[0]);
+            
+            if (count($termsplt)>1)
+                $role=$role."_".str_replace(' ','-',$termsplt[1]);
+            else continue;
             
             foreach ($this::types as $type){
+                $role_inner=strtolower($role.'_'.$type);
+                $role_slug=strtolower($type . '-'. $term->slug);
+                $role_name=$type . ' ' . $term->name;
+                if ($type=='Trustee'){
+                    $role_inner=strtolower('rcf_trustee');
+                    $role_slug=strtolower($type);
+                    $role_name=$type;
+                }
+                
+                update_option('onelogin_saml_role_mapping_'.$role_slug,$role_inner);
                 add_role(
-                    strtolower($type . '-'. $term->slug),
-                    $type . ' ' . $term->name,
+                    $role_slug,
+                    $role_name,
                     array(
                         'edit_requirements'	=> true,
                         'edit_others_requirements'	=> true,
@@ -41,6 +58,7 @@ class AddUserRoles extends RCF_Module
                         // 'delete_published_requirements'	=> false,
                         // 'delete_others_requirements'	=> false,
                         'edit_private_requirements'	=> true,
+                        'read'	=> true,
                         // 'edit_published_requirements'	=> false,
                     )
                 );

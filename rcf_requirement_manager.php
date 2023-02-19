@@ -61,3 +61,5 @@ function default_comments_on($data)
     return $data;
 }
 add_filter('wp_insert_post_data', 'default_comments_on');
+flush_rewrite_rules( false );
+
