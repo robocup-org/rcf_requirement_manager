@@ -25,10 +25,11 @@ class AddCustomPost
 
     function edited_req_key($term_id, $tt_id)
     {
+        $active=false;
         if (isset($_POST['active'])) {
-
-            update_term_meta($term_id, 'active', $_POST['active'] == 'Active');
+            $active=$_POST['active'] == 'Active';
         }
+        update_term_meta($term_id, 'active', $active);
     }
 
     function save_req_key($term_id, $tt_id)

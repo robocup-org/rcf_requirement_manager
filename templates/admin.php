@@ -1,6 +1,6 @@
 <h1>RCF Req Plugin</h1>
 
-<form >
+<form action="action_page.php">
 <fieldset>
     <legend>create requirments for all the leagues:</legend>
     <label for="key">New Year:</label>
